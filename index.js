@@ -49,7 +49,7 @@ async function run() {
     const shoesCollection = productDB.collection("shoesCollection");
     const userCollection = user_DB.collection("userCollection");
     // product....>
-    app.post("/shoes", async (req, res) => {
+    app.post("/shoes", verifyToken, async (req, res) => {
       const shoeData = req.body;
       const result = await shoesCollection.insertOne(shoeData);
       res.send(result);
@@ -66,7 +66,7 @@ async function run() {
       });
       res.send(shoesData);
     });
-    app.patch("/shoes/:id", async (req, res) => {
+    app.patch("/shoes/:id", verifyToken, async (req, res) => {
       const id = req.params.id;
       const upData = req.body;
       const shoesData = await shoesCollection.updateOne(
@@ -77,7 +77,7 @@ async function run() {
       );
       res.send(shoesData);
     });
-    app.delete("/shoes/:id", async (req, res) => {
+    app.delete("/shoes/:id", verifyToken, async (req, res) => {
       const id = req.params.id;
       const shoesData = await shoesCollection.deleteOne({
         _id: new ObjectId(id),
