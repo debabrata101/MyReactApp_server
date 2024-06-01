@@ -1,12 +1,35 @@
 const express = require("express");
 const app = express();
+const jwt = require("jsonwebtoken");
 const cors = require("cors");
 const port = 5000;
 
 app.use(cors());
 app.use(express.json());
 
+function createToken(user) {
+  const Token = jwt.sign(
+    {
+      email: user?.email,
+    },
+    "secret",
+    { expiresIn: "7d" }
+  );
+  return Token;
+}
+
+function verifyToken(req, res, next) {
+  const authToken = req.headers.authorization.split("")[1];
+  const verifyJwt = jwt.verify(token, "secret");
+  if (!verify?.email) {
+    return res.send("you are not authorized");
+  }
+  req.user = jwt.verify.email;
+  next();
+}
+
 const { MongoClient, ServerApiVersion, ObjectId } = require("mongodb");
+
 const uri =
   "mongodb+srv://debabratacmt:6hSKLrkyYr2aRUL5@cluster0.kegnvjv.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0";
 
@@ -63,25 +86,43 @@ async function run() {
     });
 
     //user------------>
-    app.post("/user", async (req, res) => {
+    app.post("/user", verifyToken, async (req, res) => {
       const user = req.body;
-
+      const token = createToken(user);
       const isUserExist = await userCollection.findOne({ email: user?.email });
       if (isUserExist?._id) {
         return res.send({
           status: "success",
           message: "Login success",
+          token,
         });
       }
-      const result = await userCollection.insertOne(user);
+      await userCollection.insertOne(user);
 
-      res.send(result);
+      return res.send({ token });
     });
 
+    app.get("/user/get/:id", async (req, res) => {
+      const id = req.params.id;
+      const result = await userCollection.findOne({ _id: new ObjectId(id) });
+      res.send(result);
+    });
     app.get("/user/:email", async (req, res) => {
       const email = req.params.email;
 
       const result = await userCollection.findOne({ email });
+      res.send(result);
+    });
+    app.patch("/user/:email", async (req, res) => {
+      const email = req.params.email;
+      const userData = req.body;
+      const result = await userCollection.updateOne(
+        { email },
+        { $set: userData },
+        {
+          upsert: true,
+        }
+      );
       res.send(result);
     });
 
